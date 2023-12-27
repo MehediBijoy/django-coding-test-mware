@@ -1,0 +1,67 @@
+{% extends 'backend/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %} Product Update form {% endblock %}
+
+{% block content %}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Product update form</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Product Information -->
+            <div class="mb-3">
+                <h5 class="mb-2">Product Information</h5>
+                {{ form|crispy }}
+            </div>
+
+            <!-- Variant Information -->
+            <div class="mb-3">
+                <h5 class="mb-2">Variant Information</h5>
+                {{ formset.management_form }}
+                {% for variant in formset.forms %}
+                <div class="mb-3 border p-3">
+                    <!-- Use form-row for each variant field -->
+                    <div class="form-row">
+                        <!-- ID field is required for each object -->
+                        {{ variant.id }}
+
+                        <div class="col">
+                            {{ variant.size|as_crispy_field }}
+                        </div>
+
+                        <div class="col">
+                            {{ variant.color|as_crispy_field }}
+                        </div>
+
+                        <div class="col">
+                            {{ variant.style|as_crispy_field }}
+                        </div>
+
+                        <div class="col">
+                            {{ variant.price|as_crispy_field }}
+                        </div>
+
+                        <div class="col">
+                            {{ variant.stock|as_crispy_field }}
+                        </div>
+
+                        <div class="col align-self-center mt-4">
+                            {{ variant.DELETE|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'authentication',
-    'product'
+    'product',
+    'crispy_forms',
+    'crispy_bootstrap4',
 ]
 
 MIDDLEWARE = [
@@ -132,3 +134,5 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/dashboard'
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
