@@ -1,25 +1,37 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import TagsInput from 'react-tagsinput'
 import 'react-tagsinput/react-tagsinput.css'
 import Dropzone from 'react-dropzone'
+import Axios from 'axios'
+import Cookies from 'js-cookie'
 
 const CreateProduct = (props) => {
+  const [product, setProduct] = useState({
+    title: undefined,
+    description: undefined,
+    sku: undefined,
+  })
   const [productVariantPrices, setProductVariantPrices] = useState([])
 
   const [productVariants, setProductVariant] = useState([
     {
-      option: 1,
+      option: 'size',
       tags: [],
     },
   ])
 
+  const handleProduct = (event) => {
+    const { name, value } = event.target
+    setProduct((preState) => ({ ...preState, [name]: value }))
+  }
+
   const handleAddClick = () => {
     let all_variants = JSON.parse(props.variants.replaceAll("'", '"')).map(
-      (el) => el.id
+      (el) => new String(el.title).toLocaleLowerCase()
     )
     let selected_variants = productVariants.map((el) => el.option)
     let available_variants = all_variants.filter(
-      (entry1) => !selected_variants.some((entry2) => entry1 == entry2)
+      (entry1) => !selected_variants.some((entry2) => entry1 === entry2)
     )
     setProductVariant([
       ...productVariants,
@@ -46,19 +58,16 @@ const CreateProduct = (props) => {
 
   // check the variant and render all the combination
   const checkVariant = () => {
-    let tags = []
-
-    productVariants.filter((item) => {
-      tags.push(item.tags)
-    })
-
     setProductVariantPrices([])
 
-    getCombn(tags).forEach((item) => {
+    getCombn(productVariants).forEach((item) => {
       setProductVariantPrices((productVariantPrice) => [
         ...productVariantPrice,
         {
-          title: item,
+          title: Object.entries(item)
+            .map((it) => it[1])
+            .join('/'),
+          variants: item,
           price: 0,
           stock: 0,
         },
@@ -66,22 +75,63 @@ const CreateProduct = (props) => {
     })
   }
 
+  useEffect(() => {
+    checkVariant()
+  }, [productVariants])
+
   // combination algorithm
-  function getCombn(arr, pre) {
-    pre = pre || ''
-    if (!arr.length) {
-      return pre
-    }
-    let ans = arr[0].reduce(function (ans, value) {
-      return ans.concat(getCombn(arr.slice(1), pre + value + '/'))
-    }, [])
-    return ans
+  function getCombn(variants) {
+    return variants.reduce(
+      (result, currentVariant) => {
+        const newCombinations = []
+
+        result.forEach((combination) => {
+          currentVariant.tags.forEach((tag) => {
+            newCombinations.push({
+              ...combination,
+              [currentVariant.option]: tag,
+            })
+          })
+        })
+
+        return newCombinations
+      },
+      [{}]
+    )
+  }
+
+  const productVariantPriceUpdate = (event, index) => {
+    const { name, value } = event.target
+    setProductVariantPrices((variants) =>
+      variants.map((item, idx) => {
+        if (idx === index) {
+          return { ...item, [name]: value }
+        } else return item
+      })
+    )
   }
 
   // Save product
   let saveProduct = (event) => {
     event.preventDefault()
-    // TODO : write your code here to save the product
+    Axios.post(
+      '/product/create-api/',
+      { ...product, product_variant_prices: productVariantPrices },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': Cookies.get('csrftoken'),
+        },
+      }
+    )
+      .then(() => alert('Product created successfully'))
+      .catch((error) =>
+        alert(
+          Object.entries(error.response.data)
+            .map((item) => `${item[0]}: ${item[1][0]}`)
+            .join('\n')
+        )
+      )
   }
 
   return (
@@ -97,6 +147,8 @@ const CreateProduct = (props) => {
                     type='text'
                     placeholder='Product Name'
                     className='form-control'
+                    name='title'
+                    onChange={handleProduct}
                   />
                 </div>
                 <div className='form-group'>
@@ -105,6 +157,8 @@ const CreateProduct = (props) => {
                     type='text'
                     placeholder='Product Name'
                     className='form-control'
+                    name='sku'
+                    onChange={handleProduct}
                   />
                 </div>
                 <div className='form-group'>
@@ -114,6 +168,8 @@ const CreateProduct = (props) => {
                     cols='30'
                     rows='4'
                     className='form-control'
+                    name='description'
+                    onChange={handleProduct}
                   ></textarea>
                 </div>
               </div>
@@ -158,16 +214,11 @@ const CreateProduct = (props) => {
                           <select
                             className='form-control'
                             defaultValue={element.option}
+                            disabled
                           >
-                            {JSON.parse(
-                              props.variants.replaceAll("'", '"')
-                            ).map((variant, index) => {
-                              return (
-                                <option key={index} value={variant.id}>
-                                  {variant.title}
-                                </option>
-                              )
-                            })}
+                            <option key={index} value={element.option}>
+                              {element.option}
+                            </option>
                           </select>
                         </div>
                       </div>
@@ -234,7 +285,10 @@ const CreateProduct = (props) => {
                                   className='form-control'
                                   type='text'
                                   name='price'
-                                  onChange={({ target }) => {}}
+                                  value={productVariantPrice.price}
+                                  onChange={(event) =>
+                                    productVariantPriceUpdate(event, index)
+                                  }
                                 />
                               </td>
                               <td>
@@ -242,7 +296,10 @@ const CreateProduct = (props) => {
                                   className='form-control'
                                   type='text'
                                   name='stock'
-                                  onChange={({ target }) => {}}
+                                  value={productVariantPrice.stock}
+                                  onChange={(event) =>
+                                    productVariantPriceUpdate(event, index)
+                                  }
                                 />
                               </td>
                             </tr>

@@ -1,11 +1,13 @@
+from django.db.models import Q
 from django.views import generic
 from django.urls import reverse_lazy
-from django.db.models import Q
 from django.db.models.query import QuerySet
+from rest_framework.generics import CreateAPIView
 from django.forms.models import inlineformset_factory
 
 from product.models import Variant, Product, ProductVariant, ProductVariantPrice
 from product.forms import ProductForm, ProductVariantPriceForm
+from product.serializers import ProductSerializer
 
 
 class CreateProductView(generic.TemplateView):
@@ -17,6 +19,14 @@ class CreateProductView(generic.TemplateView):
         context['product'] = True
         context['variants'] = list(variants.all())
         return context
+
+
+class ProductCreateAPIView(CreateAPIView):
+    serializer_class = ProductSerializer
+    queryset = Product.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
 
 class ProductListView(generic.ListView):
