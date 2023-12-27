@@ -25,9 +25,6 @@ class ProductCreateAPIView(CreateAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
 
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
 
 class ProductListView(generic.ListView):
     model = Product
@@ -42,7 +39,9 @@ class ProductListView(generic.ListView):
             variants[instance.title] = ProductVariant.objects.filter(
                 variant=instance).values('variant_title').distinct()
         context['variants'] = variants
-        context['form_values'] = self.request.GET
+
+        parameters = self.request.GET.copy()
+        context['parameters'] = parameters.pop('page', True) and parameters.urlencode()
         return context
 
     def get_queryset(self) -> QuerySet[Product]:
