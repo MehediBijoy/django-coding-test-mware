@@ -43,16 +43,12 @@ class ProductSerializer(serializers.ModelSerializer):
         for product_variant in product_prices_data:
             variants_data = product_variant.get('variants', {})
 
-            variant_size = variants_data.get('size')
-            variant_color = variants_data.get('color')
-            variant_style = variants_data.get('style')
-
             variant_one = self.prepare_product_variant(
-                'size', variant_size, product)
+                'size', variants_data.get('size'), product)
             variant_two = self.prepare_product_variant(
-                'color', variant_color, product)
+                'color', variants_data.get('color'), product)
             variant_three = self.prepare_product_variant(
-                'style', variant_style, product)
+                'style', variants_data.get('style'), product)
 
             product_variant_serializer = ProductVariantPriceSerializer(
                 data=product_variant)
